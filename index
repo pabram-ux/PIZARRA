@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizarrón de Partes - Recordatorio de Hojas de Ruta</title>
+    <meta name="description" content="Pizarrón de control y recordatorio de hojas de ruta entregadas y notas de entrega con autoguardado garantizado.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Shadows+Into+Light&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #1e130c 0%, #2e1a0f 50%, #120b06 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+            margin: 0;
+            padding: clamp(10px, 1.6vw, 24px) clamp(8px, 1.8vw, 24px) 40px;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Ambient Header */
+        .top-navbar {
+            width: 100%;
+            max-width: min(98.5vw, 2100px);
+            margin: 0 auto 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            color: #f1e4d3;
+            padding: 0 4px;
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            background: rgba(217, 119, 6, 0.25);
+            border: 1px solid rgba(217, 119, 6, 0.5);
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 1.4rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Auto-save indicator */
+        .save-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.18);
+            color: #a7f3d0;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            transition: all 0.3s ease;
+        }
+
+        .save-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
+            display: inline-block;
+            box-shadow: 0 0 6px #10b981;
+        }
+
+        .stat-chip {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .stat-total { background: #3b281d; color: #f5deb3; border: 1px solid #5a3c2c; }
+        .stat-pending { background: #78350f; color: #fef08a; border: 1px solid #b45309; }
+        .stat-done { background: #064e3b; color: #a7f3d0; border: 1px solid #059669; }
+
+        /* Tools button (Backup / Restore / Fullscreen) */
+        .tool-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #f1e4d3;
+            padding: 6px 11px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .tool-btn:active { transform: translateY(0); }
+
+        /* Corkboard Board */
+        #corkboardContainer {
+            width: 100%;
+            max-width: min(98.5vw, 2100px);
+            margin: 0 auto;
+            background-color: #c08d51;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(139, 69, 19, 0.18) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 20% 20%, rgba(92, 45, 12, 0.15) 2px, transparent 2px),
+                radial-gradient(circle at 80% 80%, rgba(205, 133, 63, 0.25) 2px, transparent 2px);
+            background-size: 24px 24px, 36px 36px, 44px 44px;
+            padding: clamp(16px, 2.5vw, 36px) clamp(12px, 2vw, 30px);
+            border-radius: 18px;
+            box-shadow: 
+                inset 0 0 35px rgba(0, 0, 0, 0.55),
+                0 16px 40px rgba(0, 0, 0, 0.6);
+            border: clamp(8px, 1.2vw, 16px) solid #522711;
+            border-image: linear-gradient(to right, #613017, #783b1c, #4a210d, #783b1c, #613017) 14;
+            position: relative;
+            min-height: calc(100vh - 120px);
+        }
+
+        .board-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .board-title {
+            color: #3b1906;
+            font-size: clamp(1.8rem, 3.2vw, 2.9rem);
+            font-family: 'Shadows Into Light', cursive;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+        }
+
+        .board-subtitle {
+            color: #55270c;
+            font-family: 'Caveat', cursive;
+            font-size: clamp(1.1rem, 1.6vw, 1.45rem);
+            margin-top: 4px;
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Form / Partes Creator Card */
+        .card-creator {
+            background-color: #fffefb;
+            max-width: min(100%, 960px);
+            margin: 0 auto 24px;
+            padding: 20px 22px 18px;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+            border: 2px solid #ebd9c8;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .card-creator.collapsed {
+            padding: 12px 20px;
+            margin-bottom: 18px;
+            background-color: #fdfbf7;
+        }
+
+        .card-creator.collapsed #partForm {
+            display: none;
+        }
+
+        .card-creator.collapsed .creator-title {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        /* Pushpins on creator card */
+        .card-creator::before, .card-creator::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 35% 35%, #e11d48, #9f1239);
+            border-radius: 50%;
+            top: -10px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.7);
+        }
+        .card-creator::before { left: 25px; }
+        .card-creator::after { right: 25px; }
+
+        .creator-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #5c2d12;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #ebd9c8;
+            padding-bottom: 8px;
+        }
+
+        .creator-title-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .creator-toggle-btn {
+            background: #f1e4d3;
+            border: 1px solid #cbb29b;
+            color: #451a03;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .creator-toggle-btn:hover {
+            background: #451a03;
+            color: #fef3c7;
+        }
+
+        .creator-badge {
+            font-size: 0.75rem;
+            background: #dcfce7;
+            color: #15803d;
+            padding: 3px 9px;
+            border-radius: 12px;
+            border: 1px solid #86efac;
+            font-weight: 600;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+        .form-full {
+            grid-column: 1 / -1;
+        }
+
+        .input-group {
+            text-align: left;
+        }
+
+        .input-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #633618;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        input[type="text"], input[type="date"], textarea, select {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1.5px solid #d8c3b0;
+            font-size: 0.92rem;
+            font-family: 'Outfit', sans-serif;
+            background-color: #fff;
+            color: #2c1a0e;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus {
+            border-color: #b45309;
+            box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.15);
+        }
+
+        .code-input {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #9a3412 !important;
+        }
+
+        textarea {
+            min-height: 65px;
+            resize: vertical;
+        }
+
+        .form-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px dashed #ebd9c8;
+        }
+
+        .color-picker-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .color-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #bbb;
+            transition: transform 0.15s;
+        }
+        .color-dot:hover { transform: scale(1.15); }
+        .color-dot.active { border: 2.5px solid #451a03; transform: scale(1.2); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        #btnSave {
+            padding: 9px 22px;
+            background: linear-gradient(135deg, #c2782b 0%, #9a3412 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #btnSave:hover {
+            background: linear-gradient(135deg, #ad661d 0%, #7c2d12 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        #btnSave:active { transform: scale(0.98); }
+
+        /* Notification Banner */
+        #notificationBanner {
+            display: none;
+            max-width: min(100%, 850px);
+            margin: -10px auto 18px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .notif-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .notif-info {
+            background: #e0f2fe;
+            color: #075985;
+            border: 1px solid #7dd3fc;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Filter & View Controls Bar */
+        .controls-bar {
+            width: 100%;
+            max-width: min(100%, 2100px);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.38);
+            backdrop-filter: blur(6px);
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .controls-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex-grow: 1;
+        }
+
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tabs, .view-tabs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn, .view-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #7c4826;
+            background: rgba(255, 255, 255, 0.75);
+            color: #451a03;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+
+        .tab-btn:hover, .view-btn:hover {
+            background: #fff;
+            color: #1e130c;
+        }
+
+        .tab-btn.active, .view-btn.active {
+            background: #451a03;
+            color: #fef3c7;
+            border-color: #451a03;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            min-width: 220px;
+            max-width: 380px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 7px 12px 7px 32px;
+            border-radius: 8px;
+            border: 1px solid #9c6c4c;
+            background: #fff;
+            font-size: 0.85rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8c5b3a;
+            font-size: 0.85rem;
+        }
+
+        /* Notes Wall Grid (Fluid across all monitors) */
+        #notesGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(clamp(250px, 20vw, 330px), 1fr));
+            gap: clamp(14px, 1.8vw, 24px);
+            margin-top: 10px;
+            padding: 8px 4px 16px;
+            transition: all 0.3s ease;
+        }
+
+        /* View Density: COMPACT (Maximum notes visible on screen) */
+        #notesGrid.view-density-compact {
+            grid-template-columns: repeat(auto-fill, minmax(clamp(205px, 15vw, 250px), 1fr));
+            gap: 12px;
+        }
+
+        #notesGrid.view-density-compact .note-card {
+            min-height: 170px;
+            padding: 16px 12px 10px;
+        }
+
+        #notesGrid.view-density-compact .note-institution {
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+        }
+
+        #notesGrid.view-density-compact .note-reference {
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+        }
+
+        #notesGrid.view-density-compact .note-location {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            margin-bottom: 6px;
+        }
+
+        /* View Density: WIDE (Spread out for large monitors) */
+        #notesGrid.view-density-wide {
+            grid-template-columns: repeat(auto-fill, minmax(clamp(320px, 28vw, 420px), 1fr));
+            gap: 26px;
+        }
+
+        #notesGrid.view-density-wide .note-card {
+            min-height: 240px;
+            padding: 26px 20px 16px;
+        }
+
+        #notesGrid.view-density-wide .note-reference {
+            font-size: 1.5rem;
+        }
+
+        /* Post-it / Nota de Entrega */
+        .note-card {
+            padding: 22px 16px 14px;
+            border-radius: 6px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+            min-height: 215px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            border: 1.5px solid rgba(0, 0, 0, 0.08);
+            word-wrap: break-word;
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.025) !important;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+            z-index: 10;
+        }
+
+        /* Blinking Alert for Unattended / Pending Notes */
+        .note-card.note-pending-alert {
+            border: 2px solid #ef4444;
+            animation: noteAlertGlow 1.8s infinite ease-in-out;
+        }
+
+        @keyframes noteAlertGlow {
+            0%, 100% {
+                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(239, 68, 68, 0);
+                border-color: rgba(239, 68, 68, 0.45);
+            }
+            50% {
+                box-shadow: 0 10px 26px rgba(220, 38, 38, 0.45), 0 0 18px rgba(239, 68, 68, 0.7);
+                border-color: rgba(220, 38, 38, 1);
+            }
+        }
+
+        /* Alert Strip on Unattended Notes */
+        .note-alert-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(220, 38, 38, 0.13);
+            color: #991b1b;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border: 1px dashed rgba(220, 38, 38, 0.4);
+            animation: stripPulse 1.6s infinite ease-in-out;
+        }
+
+        .alert-beacon-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #dc2626;
+            display: inline-block;
+            animation: dotFlash 0.8s infinite alternate;
+        }
+
+        @keyframes dotFlash {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.35); box-shadow: 0 0 7px #ef4444; }
+        }
+
+        @keyframes stripPulse {
+            0%, 100% { background: rgba(220, 38, 38, 0.12); color: #991b1b; }
+            50% { background: rgba(220, 38, 38, 0.28); color: #7f1d1d; }
+        }
+
+        /* Realistic Pushpin */
+        .pin-tack {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            top: -9px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4), inset 0 2px 2px rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
+        }
+
+        /* Pushpin Beacon Alert for pending notes */
+        .note-pending-alert .pin-tack {
+            animation: pinBeacon 1.2s infinite ease-in-out;
+        }
+
+        @keyframes pinBeacon {
+            0%, 100% {
+                box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4), inset 0 2px 2px rgba(255, 255, 255, 0.6), 0 0 0 0 rgba(239, 68, 68, 0.6);
+                transform: translateX(-50%) scale(1);
+            }
+            50% {
+                box-shadow: 0 4px 10px rgba(220, 38, 38, 0.8), inset 0 2px 2px rgba(255, 255, 255, 0.9), 0 0 14px #ef4444;
+                transform: translateX(-50%) scale(1.22);
+            }
+        }
+
+        /* Header of the note */
+        .note-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.15);
+        }
+
+        .note-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.07);
+            padding: 2px 7px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            color: #1e293b;
+        }
+
+        /* Status Badge button (toggleable) */
+        .status-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .status-badge:hover {
+            transform: scale(1.06);
+        }
+
+        .status-pending {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+            animation: alertBlink 1.4s infinite ease-in-out;
+            font-weight: 800;
+        }
+
+        @keyframes alertBlink {
+            0%, 100% {
+                background-color: #fee2e2;
+                color: #991b1b;
+                border-color: #fca5a5;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                transform: scale(1);
+            }
+            50% {
+                background-color: #dc2626;
+                color: #ffffff;
+                border-color: #b91c1c;
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.85);
+                transform: scale(1.06);
+            }
+        }
+
+        .status-pending:hover {
+            background-color: #fecaca;
+        }
+
+        .status-done {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-color: #6ee7b7;
+        }
+
+        .status-done:hover {
+            background-color: #a7f3d0;
+        }
+
+        /* Institution Row */
+        .note-institution {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1.25;
+        }
+
+        .note-institution-icon {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Documentation Location Badge */
+        .note-location {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.7);
+            color: #451a03;
+            border: 1px solid rgba(69, 26, 3, 0.2);
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-location-icon {
+            font-size: 0.85rem;
+        }
+
+        /* Reference / Subject */
+        .note-reference {
+            font-family: 'Shadows Into Light', cursive;
+            font-size: 1.35rem;
+            color: #1e293b;
+            line-height: 1.25;
+            margin-bottom: 12px;
+            flex-grow: 1;
+            white-space: pre-wrap;
+        }
+
+        /* Footer of the note */
+        .note-footer {
+            border-top: 1px dashed rgba(0, 0, 0, 0.15);
+            padding-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.76rem;
+            color: #475569;
+        }
+
+        .note-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            color: #334155;
+            transition: all 0.15s;
+        }
+        .action-btn:hover {
+            background: #fff;
+            color: #0f172a;
+        }
+        .action-btn.delete:hover {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #f87171;
+        }
+
+        /* Modal for Edit */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 16px;
+        }
+        .modal-backdrop.show { display: flex; }
+
+        .modal-content {
+            background: #fffefb;
+            width: 100%;
+            max-width: 520px;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border: 2px solid #ebd9c8;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #ebd9c8;
+            padding-bottom: 8px;
+        }
+
+        .modal-header h3 {
+            color: #451a03;
+            font-size: 1.15rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #888;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #ebd9c8;
+        }
+
+        .btn-secondary {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: #f1f5f9;
+            color: #333;
+            cursor: pointer;
+            font-size: 0.88rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            color: #451a03;
+        }
+
+        .empty-state h4 {
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+
+        /* Hidden file input for restore */
+        #backupFileInput {
+            display: none;
+        }
+
+        /* Comprehensive Responsive Multi-Monitor Media Queries */
+        @media (min-width: 1800px) {
+            body { padding: 24px 32px 60px; }
+            #corkboardContainer { max-width: 98.5vw; padding: 36px 32px; }
+            .board-title { font-size: 3.2rem; }
+            .board-subtitle { font-size: 1.55rem; }
+        }
+
+        @media (max-width: 1024px) {
+            .controls-bar { flex-direction: column; align-items: stretch; gap: 12px; }
+            .controls-left, .controls-right { width: 100%; justify-content: space-between; }
+            .search-box { max-width: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .board-title { font-size: 2.1rem; }
+            .board-subtitle { font-size: 1.15rem; }
+            #corkboardContainer { padding: 18px 12px; border-width: 10px; }
+            .top-navbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header-actions { width: 100%; justify-content: flex-start; }
+            .filter-tabs, .view-tabs { width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; }
+        }
+
+        @media (max-width: 480px) {
+            .card-creator::before, .card-creator::after { display: none; }
+            .tab-btn, .view-btn { font-size: 0.76rem; padding: 5px 8px; }
+            .stat-chip { font-size: 0.75rem; padding: 4px 8px; }
+        }
+
+        /* Fullscreen Mode Optimization */
+        :fullscreen #corkboardContainer, :-webkit-full-screen #corkboardContainer {
+            min-height: 100vh;
+            border-radius: 0;
+            border-width: 8px;
+            max-width: 100vw;
+            width: 100vw;
+        }
+
+        :fullscreen body, :-webkit-full-screen body {
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header bar with status and statistics -->
+    <header class="top-navbar">
+        <div class="brand-title">
+            <span class="brand-icon">📋</span>
+            <div>
+                <h1 style="font-size: 1.2rem; font-weight: 700; color: #fed7aa; margin: 0;">Pizarrón de Partes</h1>
+                <p style="font-size: 0.78rem; color: #d4a373; margin: 0;">Control y Recordatorio de Hojas de Ruta Entregadas</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <!-- Guaranteed Active Save Indicator -->
+            <div id="saveIndicator" class="save-indicator" title="Las notas permanecen guardadas y seguras en la pizarra.">
+                <span class="save-dot"></span> <span id="saveIndicatorText">Autoguardado Activo</span>
+            </div>
+
+            <!-- Stats badges -->
+            <span class="stat-chip stat-total" id="statTotal">Total: 0</span>
+            <span class="stat-chip stat-pending" id="statPending">⏳ No Atendidos: 0</span>
+            <span class="stat-chip stat-done" id="statDone">✅ Atendidos: 0</span>
+
+            <!-- Fullscreen / Monitor mode button -->
+            <button type="button" class="tool-btn" id="btnFullscreen" title="Expandir a Pantalla Completa para proyectar o visualizar en monitores">
+                <span id="fullscreenIcon">🖥️</span> <span id="fullscreenText">Pantalla Completa</span>
+            </button>
+
+            <!-- Backup & restore actions -->
+            <button type="button" class="tool-btn" id="btnExportBackup" title="Descargar copia de seguridad de todas las notas">
+                <span>📥</span> Respaldar
+            </button>
+            <button type="button" class="tool-btn" id="btnImportBackup" title="Restaurar notas desde un archivo de respaldo">
+                <span>📤</span> Restaurar
+            </button>
+            <input type="file" id="backupFileInput" accept=".json">
+        </div>
+    </header>
+
+    <!-- Main Corkboard Area -->
+    <main id="corkboardContainer">
+        
+        <!-- Board Header -->
+        <div class="board-header">
+            <h2 class="board-title">📌 Pizarrón de Partes y Hojas de Ruta</h2>
+            <p class="board-subtitle">Notas de Entrega, Seguimiento y Estado de Trámites</p>
+        </div>
+
+        <!-- Banner feedback for actions -->
+        <div id="notificationBanner"></div>
+
+        <!-- Create New Hoja de Ruta / Nota de Entrega Card -->
+        <section class="card-creator" id="cardCreator">
+            <div class="creator-title">
+                <div class="creator-title-left" id="creatorTitleBar" title="Clic para plegar o desplegar el formulario">
+                    <span>📝</span> <span>Registrar Nueva Nota de Entrega / Hoja de Ruta</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="creator-badge">Autoguardado Garantizado</span>
+                    <button type="button" class="creator-toggle-btn" id="btnToggleCreator" title="Plegar / desplegar para ahorrar espacio en monitor">
+                        ➖ Plegar
+                    </button>
+                </div>
+            </div>
+
+            <form id="partForm">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label class="input-label" for="hrCode">Código de Hoja de Ruta *</label>
+                        <input type="text" id="hrCode" class="code-input" placeholder="Ej: HR-2026-0492" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label" for="institution">Institución / Destinatario *</label>
+                        <input type="text" id="institution" placeholder="Ej: Ministerio de Obras Públicas" required>
+                    </div>
+
+                    <div class="input-group form-full">
+                        <label class="input-label" for="reference">Referencia / Asunto del Trámite *</label>
+                        <textarea id="reference" placeholder="Detalle de la nota de entrega, informe o solicitud remitida..." required></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label" for="deliveryDate">Fecha de Entrega / Registro</label>
+                        <input type="date" id="deliveryDate">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label" for="statusInitial">Estado Inicial</label>
+                        <select id="statusInitial">
+                            <option value="NO ATENDIDO">⏳ NO ATENDIDO (Pendiente)</option>
+                            <option value="ATENDIDO">✅ ATENDIDO</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label" for="locationSelect">📍 ¿Dónde está la documentación?</label>
+                        <select id="locationSelect">
+                            <option value="SECRETARIA">📁 SECRETARIA</option>
+                            <option value="PLANIFICACION">📐 PLANIFICACION</option>
+                            <option value="PRESUPUESTOS">💰 PRESUPUESTOS</option>
+                            <option value="ASESORIA LEGAL">⚖️ ASESORIA LEGAL</option>
+                            <option value="ALMACENES">📦 ALMACENES</option>
+                            <option value="OTROS">✏️ OTROS (Escribir texto)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" id="locationOtherGroup" style="display: none;">
+                        <label class="input-label" for="locationOtherInput">Especificar Ubicación</label>
+                        <input type="text" id="locationOtherInput" placeholder="Ej: Archivo Central, Auditoría...">
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <div class="color-picker-row">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #633618; margin-right: 4px;">Color:</span>
+                        <div class="color-dot active" style="background:#fef08a;" data-color="#fef08a" title="Amarillo"></div>
+                        <div class="color-dot" style="background:#bae6fd;" data-color="#bae6fd" title="Azul"></div>
+                        <div class="color-dot" style="background:#bbf7d0;" data-color="#bbf7d0" title="Verde"></div>
+                        <div class="color-dot" style="background:#fed7aa;" data-color="#fed7aa" title="Naranja"></div>
+                        <div class="color-dot" style="background:#e9d5ff;" data-color="#e9d5ff" title="Lavanda"></div>
+                        <div class="color-dot" style="background:#fbcfe8;" data-color="#fbcfe8" title="Rosa"></div>
+                    </div>
+
+                    <button type="submit" id="btnSave">
+                        <span>📌</span> Fijar en Pizarra
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Controls: Filters, Search & Display Modes -->
+        <div class="controls-bar">
+            <div class="controls-left">
+                <div class="filter-tabs">
+                    <button class="tab-btn active" data-filter="ALL">Todos (<span id="countAll">0</span>)</button>
+                    <button class="tab-btn" data-filter="NO ATENDIDO">⏳ No Atendidos (<span id="countPending">0</span>)</button>
+                    <button class="tab-btn" data-filter="ATENDIDO">✅ Atendidos (<span id="countDone">0</span>)</button>
+                </div>
+
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Buscar por código, institución, asunto o doc...">
+                </div>
+            </div>
+
+            <div class="controls-right">
+                <span style="font-size: 0.78rem; font-weight: 700; color: #451a03;">📐 Vista Pantalla:</span>
+                <div class="view-tabs">
+                    <button type="button" class="view-btn" data-density="compact" title="Modo compacto: visualiza mayor cantidad de notas simultáneas en el monitor">
+                        🗜️ Compacta
+                    </button>
+                    <button type="button" class="view-btn active" data-density="normal" title="Modo normal estándar">
+                        📄 Normal
+                    </button>
+                    <button type="button" class="view-btn" data-density="wide" title="Modo cuadrícula amplia para monitores anchos">
+                        🖥️ Amplia
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Notes Wall Grid -->
+        <div id="notesGrid">
+            <!-- Dynamic notes loaded here -->
+        </div>
+
+    </main>
+
+    <!-- Modal for Editing a Note -->
+    <div class="modal-backdrop" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Nota de Hoja de Ruta</h3>
+                <button class="modal-close" id="btnModalClose">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label class="input-label" for="editHrCode">Código de Hoja de Ruta</label>
+                    <input type="text" id="editHrCode" class="code-input" required>
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label class="input-label" for="editInstitution">Institución</label>
+                    <input type="text" id="editInstitution" required>
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label class="input-label" for="editReference">Referencia / Asunto</label>
+                    <textarea id="editReference" rows="3" required></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label class="input-label" for="editDate">Fecha</label>
+                        <input type="date" id="editDate">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label" for="editStatus">Estado</label>
+                        <select id="editStatus">
+                            <option value="NO ATENDIDO">⏳ NO ATENDIDO</option>
+                            <option value="ATENDIDO">✅ ATENDIDO</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group" style="margin-top: 12px; margin-bottom: 12px;">
+                    <label class="input-label" for="editLocation">📍 Ubicación de la Documentación</label>
+                    <select id="editLocation">
+                        <option value="PLANIFICACION">📐 PLANIFICACION</option>
+                        <option value="PRESUPUESTOS">💰 PRESUPUESTOS</option>
+                        <option value="ASESORIA LEGAL">⚖️ ASESORIA LEGAL</option>
+                        <option value="ALMACENES">📦 ALMACENES</option>
+                        <option value="SECRETARIA">📁 SECRETARIA</option>
+                        <option value="OTROS">✏️ OTROS (Escribir texto)</option>
+                    </select>
+                </div>
+                <div class="input-group" id="editLocationOtherGroup" style="margin-bottom: 12px; display: none;">
+                    <label class="input-label" for="editLocationOther">Especificar Ubicación Personalizada</label>
+                    <input type="text" id="editLocationOther" placeholder="Ej: Gerencia General, Archivo Central, etc.">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelEdit">Cancelar</button>
+                    <button type="submit" id="btnSaveModal" style="padding: 8px 18px; font-size: 0.9rem; background: linear-gradient(135deg, #c2782b 0%, #9a3412 100%); color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Storage Manager & Application Script -->
+    <script>
+        // Storage Keys
+        const STORAGE_KEY = 'partes_hojas_ruta_db';
+        const IDB_NAME = 'PartesPizarronDB';
+        const IDB_STORE = 'hojas_ruta';
+
+        // Sample initial data if no records exist
+        const DEFAULT_PARTES = [
+            {
+                id: 'hr-1',
+                code: 'HR-2026-0041',
+                institution: 'Ministerio de Economía y Finanzas',
+                reference: 'Entrega de informe financiero de rendición de cuentas primer trimestre 2026.',
+                date: new Date().toISOString().split('T')[0],
+                status: 'NO ATENDIDO',
+                location: 'PRESUPUESTOS',
+                locationOther: '',
+                color: '#fef08a',
+                rotation: -2,
+                pinColor: '#e11d48'
+            },
+            {
+                id: 'hr-2',
+                code: 'HR-2026-0038',
+                institution: 'Gobierno Autónomo Municipal',
+                reference: 'Solicitud de autorización para ejecución de obras de mantenimiento vial en distrito 4.',
+                date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+                status: 'ATENDIDO',
+                location: 'PLANIFICACION',
+                locationOther: '',
+                color: '#bbf7d0',
+                rotation: 1.8,
+                pinColor: '#059669'
+            },
+            {
+                id: 'hr-3',
+                code: 'HR-2026-0035',
+                institution: 'Viceministerio de Planificación',
+                reference: 'Nota de entrega de carpetas técnicas y planos georreferenciados del proyecto.',
+                date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
+                status: 'NO ATENDIDO',
+                location: 'ASESORIA LEGAL',
+                locationOther: '',
+                color: '#fed7aa',
+                rotation: -1.5,
+                pinColor: '#d97706'
+            }
+        ];
+
+        const PIN_COLORS = ['#e11d48', '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777'];
+        const ROTATIONS = [-2.5, 1.8, -1.5, 2.2, -3, 1.2, -2, 2.8];
+
+        let partes = [];
+        let currentFilter = 'ALL';
+        let searchQuery = '';
+        let selectedColor = '#fef08a';
+
+        // --- Resilient Multi-Platform Storage Engine ---
+        // Handles localStorage, sessionStorage, window.name (refresh-proof), and IndexedDB safely.
+        const StorageEngine = {
+            save(data) {
+                const str = JSON.stringify(data);
+
+                // 1. LocalStorage safe try
+                try {
+                    if (typeof localStorage !== 'undefined') {
+                        localStorage.setItem(STORAGE_KEY, str);
+                        localStorage.setItem(STORAGE_KEY + '_v2', str);
+                    }
+                } catch (e) {}
+
+                // 2. SessionStorage safe try
+                try {
+                    if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.setItem(STORAGE_KEY, str);
+                    }
+                } catch (e) {}
+
+                // 3. Window.name fallback (survives page refresh in any browser/sandbox!)
+                try {
+                    window.name = JSON.stringify({ app: 'pizarron_partes', data: data });
+                } catch (e) {}
+
+                // 4. IndexedDB safe async save
+                try {
+                    this.saveToIndexedDB(data);
+                } catch (e) {}
+            },
+
+            load(callback) {
+                let found = null;
+
+                // 1. Try LocalStorage
+                try {
+                    if (typeof localStorage !== 'undefined') {
+                        const local = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY + '_v2');
+                        if (local) {
+                            const parsed = JSON.parse(local);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                found = parsed;
+                            }
+                        }
+                    }
+                } catch (e) {}
+
+                // 2. Try Window.name fallback
+                if (!found) {
+                    try {
+                        if (window.name && window.name.startsWith('{')) {
+                            const winData = JSON.parse(window.name);
+                            if (winData && winData.app === 'pizarron_partes' && Array.isArray(winData.data) && winData.data.length > 0) {
+                                found = winData.data;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                // 3. Try SessionStorage
+                if (!found) {
+                    try {
+                        if (typeof sessionStorage !== 'undefined') {
+                            const sess = sessionStorage.getItem(STORAGE_KEY);
+                            if (sess) {
+                                const parsed = JSON.parse(sess);
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    found = parsed;
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                if (found) {
+                    callback(found);
+                    return;
+                }
+
+                // 4. Try IndexedDB async
+                this.loadFromIndexedDB((idbData) => {
+                    if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+                        callback(idbData);
+                    } else {
+                        callback(DEFAULT_PARTES);
+                    }
+                });
+            },
+
+            saveToIndexedDB(data) {
+                if (!window.indexedDB) return;
+                const request = indexedDB.open(IDB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(IDB_STORE)) {
+                        db.createObjectStore(IDB_STORE, { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    const db = e.target.result;
+                    try {
+                        const tx = db.transaction([IDB_STORE], 'readwrite');
+                        const store = tx.objectStore(IDB_STORE);
+                        store.put({ key: 'current_partes', value: data, updated: Date.now() });
+                    } catch (err) {}
+                };
+            },
+
+            loadFromIndexedDB(cb) {
+                if (!window.indexedDB) { cb(null); return; }
+                const request = indexedDB.open(IDB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(IDB_STORE)) {
+                        db.createObjectStore(IDB_STORE, { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    const db = e.target.result;
+                    try {
+                        const tx = db.transaction([IDB_STORE], 'readonly');
+                        const store = tx.objectStore(IDB_STORE);
+                        const getReq = store.get('current_partes');
+                        getReq.onsuccess = () => {
+                            if (getReq.result && Array.isArray(getReq.result.value)) {
+                                cb(getReq.result.value);
+                            } else {
+                                cb(null);
+                            }
+                        };
+                        getReq.onerror = () => cb(null);
+                    } catch (err) {
+                        cb(null);
+                    }
+                };
+                request.onerror = () => cb(null);
+            }
+        };
+
+        // Initialize application
+        function initApp() {
+            // Set default date picker to today
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('deliveryDate');
+            if (dateInput) dateInput.value = todayStr;
+
+            setupEventListeners();
+
+            // Load data safely
+            StorageEngine.load((loadedPartes) => {
+                partes = loadedPartes && loadedPartes.length > 0 ? loadedPartes : DEFAULT_PARTES;
+                StorageEngine.save(partes);
+                renderBoard();
+                updateSaveIndicator('Autoguardado Activo');
+            });
+        }
+
+        // Save & persist all notes
+        function persistAllPartes(actionLabel = 'Guardado') {
+            StorageEngine.save(partes);
+            updateSaveIndicator(actionLabel);
+            updateStats();
+        }
+
+        function updateSaveIndicator(text) {
+            const indText = document.getElementById('saveIndicatorText');
+            if (indText) {
+                indText.textContent = `${text} (${partes.length} notas)`;
+                setTimeout(() => {
+                    indText.textContent = `Autoguardado Activo (${partes.length} notas)`;
+                }, 2500);
+            }
+        }
+
+        function showNotification(text, type = 'success') {
+            const banner = document.getElementById('notificationBanner');
+            if (!banner) return;
+            banner.className = type === 'success' ? 'notif-success' : 'notif-info';
+            banner.textContent = text;
+            banner.style.display = 'block';
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 3500);
+        }
+
+        function updateStats() {
+            const total = partes.length;
+            const pending = partes.filter(p => p.status === 'NO ATENDIDO').length;
+            const done = partes.filter(p => p.status === 'ATENDIDO').length;
+
+            const elTotal = document.getElementById('statTotal');
+            const elPending = document.getElementById('statPending');
+            const elDone = document.getElementById('statDone');
+            const elCountAll = document.getElementById('countAll');
+            const elCountPending = document.getElementById('countPending');
+            const elCountDone = document.getElementById('countDone');
+
+            if (elTotal) elTotal.textContent = `Total: ${total}`;
+            if (elPending) elPending.textContent = `⏳ No Atendidos: ${pending}`;
+            if (elDone) elDone.textContent = `✅ Atendidos: ${done}`;
+
+            if (elCountAll) elCountAll.textContent = total;
+            if (elCountPending) elCountPending.textContent = pending;
+            if (elCountDone) elCountDone.textContent = done;
+        }
+
+        // Helper to format documentation location
+        function getLocationMeta(item) {
+            const loc = (item && item.location) ? item.location.toUpperCase().trim() : 'SECRETARIA';
+            if (loc === 'PLANIFICACION') return { icon: '📐', text: 'PLANIFICACIÓN' };
+            if (loc === 'PRESUPUESTOS') return { icon: '💰', text: 'PRESUPUESTOS' };
+            if (loc === 'ASESORIA LEGAL') return { icon: '⚖️', text: 'ASESORÍA LEGAL' };
+            if (loc === 'ALMACENES') return { icon: '📦', text: 'ALMACENES' };
+            if (loc === 'SECRETARIA') return { icon: '📁', text: 'SECRETARÍA' };
+            if (loc === 'OTROS') {
+                const customText = item.locationOther && item.locationOther.trim() ? item.locationOther.trim().toUpperCase() : 'OTROS';
+                return { icon: '📍', text: customText };
+            }
+            return { icon: '📍', text: loc };
+        }
+
+        // Render notes onto the corkboard
+        function renderBoard() {
+            const grid = document.getElementById('notesGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = partes.filter(item => {
+                const matchFilter = currentFilter === 'ALL' || item.status === currentFilter;
+                const q = searchQuery.toLowerCase().trim();
+                const locInfo = getLocationMeta(item);
+                const matchSearch = !q || 
+                    (item.code && item.code.toLowerCase().includes(q)) || 
+                    (item.institution && item.institution.toLowerCase().includes(q)) || 
+                    (item.reference && item.reference.toLowerCase().includes(q)) ||
+                    (locInfo.text && locInfo.text.toLowerCase().includes(q));
+                return matchFilter && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h4>📭 No hay notas que mostrar</h4>
+                        <p style="font-size: 0.9rem;">No se encontraron hojas de ruta para el filtro o término de búsqueda ingresado.</p>
+                    </div>
+                `;
+                updateStats();
+                return;
+            }
+
+            filtered.forEach((item, index) => {
+                const card = document.createElement('div');
+                const isDone = item.status === 'ATENDIDO';
+                
+                // Add alert animation class if not attended
+                card.className = isDone ? 'note-card' : 'note-card note-pending-alert';
+                card.style.backgroundColor = item.color || '#fef08a';
+                card.style.transform = `rotate(${item.rotation || ROTATIONS[index % ROTATIONS.length]}deg)`;
+
+                const statusClass = isDone ? 'status-done' : 'status-pending';
+                const statusText = isDone ? '✅ ATENDIDO' : '🚨 NO ATENDIDO';
+                const alertStrip = !isDone ? `
+                    <div class="note-alert-strip">
+                        <span class="alert-beacon-dot"></span>
+                        <span>🚨 ALERTA: TRÁMITE PENDIENTE</span>
+                    </div>
+                ` : '';
+
+                const locMeta = getLocationMeta(item);
+
+                card.innerHTML = `
+                    <!-- 3D Pin with alert pulse when pending -->
+                    <div class="pin-tack" style="background: radial-gradient(circle at 35% 35%, ${item.pinColor || '#e11d48'}, #7f1d1d);" title="${!isDone ? 'Trámite pendiente de atención' : 'Trámite atendido'}"></div>
+                    
+                    <div>
+                        ${alertStrip}
+                        <!-- Header: Code and Status Badge (Click to toggle) -->
+                        <div class="note-header">
+                            <span class="note-code">${escapeHtml(item.code)}</span>
+                            <button type="button" class="status-badge ${statusClass}" onclick="toggleStatus('${item.id}')" title="Haz clic para alternar entre Atendido y No Atendido">
+                                ${statusText}
+                            </button>
+                        </div>
+
+                        <!-- Institution -->
+                        <div class="note-institution">
+                            <span class="note-institution-icon">🏛️</span>
+                            <span>${escapeHtml(item.institution)}</span>
+                        </div>
+
+                        <!-- Location Badge -->
+                        <div class="note-location" title="Ubicación de la documentación">
+                            <span class="note-location-icon">${locMeta.icon}</span>
+                            <span><strong>Doc:</strong> ${escapeHtml(locMeta.text)}</span>
+                        </div>
+
+                        <!-- Reference / Subject -->
+                        <div class="note-reference">
+                            ${escapeHtml(item.reference)}
+                        </div>
+                    </div>
+
+                    <!-- Footer: Date and Action Buttons -->
+                    <div class="note-footer">
+                        <div class="note-date">
+                            <span>📅</span> ${formatDisplayDate(item.date)}
+                        </div>
+                        <div class="note-actions">
+                            <button class="action-btn" onclick="openEditModal('${item.id}')" title="Editar parte y cambiar ubicación de documentación">✏️ Editar</button>
+                            <button class="action-btn delete" onclick="deleteParte('${item.id}')" title="Eliminar de la pizarra">🗑️</button>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            updateStats();
+        }
+
+        // Toggle Atendido / No Atendido
+        window.toggleStatus = function(id) {
+            const index = partes.findIndex(p => p.id === id);
+            if (index !== -1) {
+                const newStatus = partes[index].status === 'ATENDIDO' ? 'NO ATENDIDO' : 'ATENDIDO';
+                partes[index].status = newStatus;
+                persistAllPartes(`Estado ${newStatus}`);
+                renderBoard();
+            }
+        };
+
+        // Delete item with immediate auto-save
+        window.deleteParte = function(id) {
+            const item = partes.find(p => p.id === id);
+            const name = item ? item.code : 'la nota';
+            if (confirm(`¿Estás seguro de quitar ${name} de la pizarra?`)) {
+                partes = partes.filter(p => p.id !== id);
+                persistAllPartes('Eliminado');
+                renderBoard();
+                showNotification(`Hoja de ruta ${name} eliminada y pizarra actualizada.`, 'info');
+            }
+        };
+
+        // Open edit modal
+        window.openEditModal = function(id) {
+            const item = partes.find(p => p.id === id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editHrCode').value = item.code || '';
+            document.getElementById('editInstitution').value = item.institution || '';
+            document.getElementById('editReference').value = item.reference || '';
+            document.getElementById('editDate').value = item.date || '';
+            document.getElementById('editStatus').value = item.status || 'NO ATENDIDO';
+
+            // Populate Location fields
+            const standardLocations = ['PLANIFICACION', 'PRESUPUESTOS', 'ASESORIA LEGAL', 'ALMACENES', 'SECRETARIA'];
+            const editLocationSelect = document.getElementById('editLocation');
+            const editLocationOtherGroup = document.getElementById('editLocationOtherGroup');
+            const editLocationOther = document.getElementById('editLocationOther');
+
+            const itemLoc = item.location ? item.location.toUpperCase().trim() : 'SECRETARIA';
+
+            if (standardLocations.includes(itemLoc)) {
+                editLocationSelect.value = itemLoc;
+                editLocationOtherGroup.style.display = 'none';
+                editLocationOther.value = '';
+            } else {
+                editLocationSelect.value = 'OTROS';
+                editLocationOtherGroup.style.display = 'block';
+                editLocationOther.value = item.locationOther || (itemLoc !== 'OTROS' ? itemLoc : '');
+            }
+
+            document.getElementById('editModal').classList.add('show');
+        };
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        // Setup DOM event listeners
+        function setupEventListeners() {
+            // Restore density preference
+            const savedDensity = localStorage.getItem('pizarron_density') || 'normal';
+            const notesGrid = document.getElementById('notesGrid');
+            if (notesGrid && savedDensity !== 'normal') {
+                notesGrid.classList.remove('view-density-compact', 'view-density-wide');
+                if (savedDensity === 'compact') notesGrid.classList.add('view-density-compact');
+                if (savedDensity === 'wide') notesGrid.classList.add('view-density-wide');
+            }
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                if (btn.dataset.density === savedDensity) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const density = btn.dataset.density;
+                    if (notesGrid) {
+                        notesGrid.classList.remove('view-density-compact', 'view-density-wide');
+                        if (density === 'compact') notesGrid.classList.add('view-density-compact');
+                        if (density === 'wide') notesGrid.classList.add('view-density-wide');
+                    }
+                    localStorage.setItem('pizarron_density', density);
+                });
+            });
+
+            // Form Creator Collapsible Toggle (Save monitor space)
+            const cardCreator = document.getElementById('cardCreator');
+            const btnToggleCreator = document.getElementById('btnToggleCreator');
+            const creatorTitleBar = document.getElementById('creatorTitleBar');
+
+            function toggleCreatorCard(forceState) {
+                if (!cardCreator || !btnToggleCreator) return;
+                const isCurrentlyCollapsed = cardCreator.classList.contains('collapsed');
+                const shouldCollapse = typeof forceState === 'boolean' ? forceState : !isCurrentlyCollapsed;
+                
+                if (shouldCollapse) {
+                    cardCreator.classList.add('collapsed');
+                    btnToggleCreator.innerHTML = '➕ Nueva Nota';
+                    localStorage.setItem('pizarron_form_collapsed', 'true');
+                } else {
+                    cardCreator.classList.remove('collapsed');
+                    btnToggleCreator.innerHTML = '➖ Plegar';
+                    localStorage.setItem('pizarron_form_collapsed', 'false');
+                    const hrInput = document.getElementById('hrCode');
+                    if (hrInput) hrInput.focus();
+                }
+            }
+
+            if (btnToggleCreator) {
+                btnToggleCreator.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleCreatorCard();
+                });
+            }
+            if (creatorTitleBar) {
+                creatorTitleBar.addEventListener('click', () => {
+                    toggleCreatorCard();
+                });
+            }
+
+            // Restore collapsed state if set
+            if (localStorage.getItem('pizarron_form_collapsed') === 'true') {
+                toggleCreatorCard(true);
+            }
+
+            // Fullscreen Mode Toggle for Projectors, Monitors and Displays
+            const btnFullscreen = document.getElementById('btnFullscreen');
+            const fullscreenIcon = document.getElementById('fullscreenIcon');
+            const fullscreenText = document.getElementById('fullscreenText');
+
+            function updateFullscreenUI() {
+                const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+                if (fullscreenIcon && fullscreenText) {
+                    fullscreenIcon.textContent = isFs ? '🗗' : '🖥️';
+                    fullscreenText.textContent = isFs ? 'Salir Pantalla Completa' : 'Pantalla Completa';
+                }
+                if (btnFullscreen) {
+                    btnFullscreen.title = isFs ? 'Salir de modo pantalla completa' : 'Expandir el pizarron a pantalla completa para monitores y proyectores';
+                }
+            }
+
+            if (btnFullscreen) {
+                btnFullscreen.addEventListener('click', async () => {
+                    try {
+                        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+                        if (!isFs) {
+                            if (document.documentElement.requestFullscreen) {
+                                await document.documentElement.requestFullscreen();
+                            } else if (document.documentElement.webkitRequestFullscreen) {
+                                await document.documentElement.webkitRequestFullscreen();
+                            } else if (document.documentElement.msRequestFullscreen) {
+                                await document.documentElement.msRequestFullscreen();
+                            }
+                        } else {
+                            if (document.exitFullscreen) {
+                                await document.exitFullscreen();
+                            } else if (document.webkitExitFullscreen) {
+                                await document.webkitExitFullscreen();
+                            } else if (document.msExitFullscreen) {
+                                await document.msExitFullscreen();
+                            }
+                        }
+                    } catch (err) {
+                        console.log('Fullscreen error:', err);
+                    }
+                });
+            }
+
+            document.addEventListener('fullscreenchange', updateFullscreenUI);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+            document.addEventListener('mozfullscreenchange', updateFullscreenUI);
+            document.addEventListener('MSFullscreenChange', updateFullscreenUI);
+
+            // Color picker dots
+            document.querySelectorAll('.color-dot').forEach(dot => {
+                dot.addEventListener('click', () => {
+                    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    selectedColor = dot.dataset.color;
+                });
+            });
+
+            // Location select change for new item form
+            const locationSelect = document.getElementById('locationSelect');
+            const locationOtherGroup = document.getElementById('locationOtherGroup');
+            const locationOtherInput = document.getElementById('locationOtherInput');
+            if (locationSelect && locationOtherGroup) {
+                locationSelect.addEventListener('change', () => {
+                    if (locationSelect.value === 'OTROS') {
+                        locationOtherGroup.style.display = 'block';
+                        if (locationOtherInput) locationOtherInput.focus();
+                    } else {
+                        locationOtherGroup.style.display = 'none';
+                    }
+                });
+            }
+
+            // Location select change for edit modal form
+            const editLocation = document.getElementById('editLocation');
+            const editLocationOtherGroup = document.getElementById('editLocationOtherGroup');
+            const editLocationOther = document.getElementById('editLocationOther');
+            if (editLocation && editLocationOtherGroup) {
+                editLocation.addEventListener('change', () => {
+                    if (editLocation.value === 'OTROS') {
+                        editLocationOtherGroup.style.display = 'block';
+                        if (editLocationOther) editLocationOther.focus();
+                    } else {
+                        editLocationOtherGroup.style.display = 'none';
+                    }
+                });
+            }
+
+            // Form Submit for new item (Fixed to cork with auto-save)
+            const partForm = document.getElementById('partForm');
+            if (partForm) {
+                partForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const code = document.getElementById('hrCode').value.trim();
+                    const institution = document.getElementById('institution').value.trim();
+                    const reference = document.getElementById('reference').value.trim();
+                    const date = document.getElementById('deliveryDate').value || new Date().toISOString().split('T')[0];
+                    const status = document.getElementById('statusInitial').value;
+                    const locVal = locationSelect ? locationSelect.value : 'SECRETARIA';
+                    const locOtherVal = (locationOtherInput && locVal === 'OTROS') ? locationOtherInput.value.trim() : '';
+
+                    if (!code || !institution || !reference) return;
+
+                    const newItem = {
+                        id: 'hr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+                        code: code,
+                        institution: institution,
+                        reference: reference,
+                        date: date,
+                        status: status,
+                        location: locVal,
+                        locationOther: locOtherVal,
+                        color: selectedColor,
+                        rotation: ROTATIONS[partes.length % ROTATIONS.length],
+                        pinColor: PIN_COLORS[partes.length % PIN_COLORS.length]
+                    };
+
+                    // Add to start of list so newest is visible on top
+                    partes.unshift(newItem);
+                    
+                    // Persist across all storage engines
+                    persistAllPartes('Fijado y guardado');
+                    renderBoard();
+
+                    showNotification(`¡Nota ${code} fijada y guardada con éxito en la pizarra! 📌`, 'success');
+
+                    // Reset form inputs
+                    document.getElementById('hrCode').value = '';
+                    document.getElementById('institution').value = '';
+                    document.getElementById('reference').value = '';
+                    if (locationSelect) locationSelect.value = 'SECRETARIA';
+                    if (locationOtherGroup) locationOtherGroup.style.display = 'none';
+                    if (locationOtherInput) locationOtherInput.value = '';
+                    document.getElementById('hrCode').focus();
+                });
+            }
+
+            // Filter Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderBoard();
+                });
+            });
+
+            // Search input
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value;
+                    renderBoard();
+                });
+            }
+
+            // Modal close buttons
+            const btnModalClose = document.getElementById('btnModalClose');
+            const btnCancelEdit = document.getElementById('btnCancelEdit');
+            const editModal = document.getElementById('editModal');
+
+            if (btnModalClose) btnModalClose.addEventListener('click', closeEditModal);
+            if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
+            if (editModal) {
+                editModal.addEventListener('click', (e) => {
+                    if (e.target === editModal) closeEditModal();
+                });
+            }
+
+            // Edit Form Submit
+            const editForm = document.getElementById('editForm');
+            if (editForm) {
+                editForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const id = document.getElementById('editId').value;
+                    const index = partes.findIndex(p => p.id === id);
+                    if (index !== -1) {
+                        partes[index].code = document.getElementById('editHrCode').value.trim();
+                        partes[index].institution = document.getElementById('editInstitution').value.trim();
+                        partes[index].reference = document.getElementById('editReference').value.trim();
+                        partes[index].date = document.getElementById('editDate').value;
+                        partes[index].status = document.getElementById('editStatus').value;
+
+                        const editLoc = document.getElementById('editLocation').value;
+                        const editLocOther = document.getElementById('editLocationOther').value.trim();
+                        partes[index].location = editLoc;
+                        partes[index].locationOther = (editLoc === 'OTROS') ? editLocOther : '';
+
+                        persistAllPartes('Cambios guardados');
+                        renderBoard();
+                        closeEditModal();
+                        showNotification(`Nota ${partes[index].code} actualizada correctamente con su ubicación.`, 'success');
+                    }
+                });
+            }
+
+            // Backup Export (Download JSON file)
+            const btnExport = document.getElementById('btnExportBackup');
+            if (btnExport) {
+                btnExport.addEventListener('click', () => {
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(partes, null, 2));
+                    const downloadAnchor = document.createElement('a');
+                    const timestamp = new Date().toISOString().split('T')[0];
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", `respaldo_pizarron_partes_${timestamp}.json`);
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+                    downloadAnchor.remove();
+                    showNotification("Copia de seguridad descargada exitosamente. 📥", "success");
+                });
+            }
+
+            // Backup Import (Upload JSON file)
+            const btnImport = document.getElementById('btnImportBackup');
+            const fileInput = document.getElementById('backupFileInput');
+            if (btnImport && fileInput) {
+                btnImport.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        try {
+                            const imported = JSON.parse(evt.target.result);
+                            if (Array.isArray(imported)) {
+                                partes = imported;
+                                persistAllPartes('Respaldo restaurado');
+                                renderBoard();
+                                showNotification(`Se han restaurado ${partes.length} notas de hojas de ruta con éxito. 📤`, 'success');
+                            } else {
+                                alert("El archivo de respaldo no tiene el formato correcto.");
+                            }
+                        } catch (err) {
+                            alert("Error al leer el archivo JSON de respaldo.");
+                        }
+                    };
+                    reader.readAsText(file);
+                    e.target.value = '';
+                });
+            }
+        }
+
+        // Helpers
+        function formatDisplayDate(dateStr) {
+            if (!dateStr) return 'Hoy';
+            try {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+                return dateStr;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Start on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
