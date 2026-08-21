@@ -721,21 +721,35 @@
             background-color: #a7f3d0;
         }
 
-        /* Institution Row */
+        /* Institution & Sender Row */
         .note-institution {
-            font-size: 1.05rem;
+            font-size: 1.02rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             gap: 5px;
             line-height: 1.25;
         }
 
-        .note-institution-icon {
-            font-size: 0.9rem;
-            opacity: 0.8;
+        .note-sender {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border-left: 2px solid #0284c7;
+        }
+
+        .note-institution-icon, .note-sender-icon {
+            font-size: 0.85rem;
+            opacity: 0.85;
         }
 
         /* Documentation Location Badge */
@@ -820,64 +834,115 @@
         .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 999;
-            padding: 16px;
+            z-index: 9999;
+            padding: clamp(10px, 3vw, 24px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
         .modal-backdrop.show { display: flex; }
 
         .modal-content {
             background: #fffefb;
             width: 100%;
-            max-width: 520px;
+            max-width: 600px;
+            max-height: min(90vh, 850px);
+            display: flex;
+            flex-direction: column;
             border-radius: 14px;
-            padding: 22px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
             border: 2px solid #ebd9c8;
+            margin: auto;
+            position: relative;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 14px;
+            padding: 16px 20px 14px;
             border-bottom: 1px solid #ebd9c8;
-            padding-bottom: 8px;
+            background: #fcf9f5;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            flex-shrink: 0;
         }
 
         .modal-header h3 {
             color: #451a03;
-            font-size: 1.15rem;
+            font-size: 1.18rem;
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 1.4rem;
+            line-height: 1;
             cursor: pointer;
-            color: #888;
+            color: #555;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .modal-close:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+        .modal-body {
+            padding: 18px 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal-footer {
             display: flex;
             justify-content: flex-end;
-            gap: 8px;
-            margin-top: 16px;
-            padding-top: 12px;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
             border-top: 1px solid #ebd9c8;
+            background: #fdfbf7;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            flex-shrink: 0;
         }
 
         .btn-secondary {
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            background: #f1f5f9;
-            color: #333;
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 1.5px solid #d1bda9;
+            background: #fff;
+            color: #4b2d18;
+            font-weight: 600;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #f5ebe0;
+            border-color: #b0957b;
         }
 
         /* Empty state */
@@ -1020,6 +1085,11 @@
                         <input type="text" id="institution" placeholder="Ej: Ministerio de Obras Públicas" required>
                     </div>
 
+                    <div class="input-group">
+                        <label class="input-label" for="senderName">👤 Nombre del Remitente</label>
+                        <input type="text" id="senderName" placeholder="Ej: Lic. Juan Pérez / Dir. Administrativo">
+                    </div>
+
                     <div class="input-group form-full">
                         <label class="input-label" for="reference">Referencia / Asunto del Trámite *</label>
                         <textarea id="reference" placeholder="Detalle de la nota de entrega, informe o solicitud remitida..." required></textarea>
@@ -1117,53 +1187,59 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>✏️ Editar Nota de Hoja de Ruta</h3>
-                <button class="modal-close" id="btnModalClose">&times;</button>
+                <button type="button" class="modal-close" id="btnModalClose" title="Cerrar ventana">&times;</button>
             </div>
-            <form id="editForm">
-                <input type="hidden" id="editId">
-                <div class="input-group" style="margin-bottom: 12px;">
-                    <label class="input-label" for="editHrCode">Código de Hoja de Ruta</label>
-                    <input type="text" id="editHrCode" class="code-input" required>
-                </div>
-                <div class="input-group" style="margin-bottom: 12px;">
-                    <label class="input-label" for="editInstitution">Institución</label>
-                    <input type="text" id="editInstitution" required>
-                </div>
-                <div class="input-group" style="margin-bottom: 12px;">
-                    <label class="input-label" for="editReference">Referencia / Asunto</label>
-                    <textarea id="editReference" rows="3" required></textarea>
-                </div>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label class="input-label" for="editDate">Fecha</label>
-                        <input type="date" id="editDate">
+            <form id="editForm" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; margin: 0;">
+                <div class="modal-body">
+                    <input type="hidden" id="editId">
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label" for="editHrCode">Código de Hoja de Ruta *</label>
+                        <input type="text" id="editHrCode" class="code-input" placeholder="Ej: HR-2026-0041" required>
                     </div>
-                    <div class="input-group">
-                        <label class="input-label" for="editStatus">Estado</label>
-                        <select id="editStatus">
-                            <option value="NO ATENDIDO">⏳ NO ATENDIDO</option>
-                            <option value="ATENDIDO">✅ ATENDIDO</option>
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label" for="editInstitution">Institución / Entidad *</label>
+                        <input type="text" id="editInstitution" placeholder="Ej: Ministerio de Planificación" required>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label" for="editSenderName">👤 Nombre del Remitente</label>
+                        <input type="text" id="editSenderName" placeholder="Ej: Lic. Juan Pérez / Unidad Solicitante">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label" for="editReference">Referencia / Asunto del Trámite *</label>
+                        <textarea id="editReference" rows="3" placeholder="Detalle del trámite..." required></textarea>
+                    </div>
+                    <div class="form-grid" style="margin-bottom: 14px;">
+                        <div class="input-group">
+                            <label class="input-label" for="editDate">📅 Fecha</label>
+                            <input type="date" id="editDate">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="editStatus">Estado</label>
+                            <select id="editStatus">
+                                <option value="NO ATENDIDO">⏳ NO ATENDIDO</option>
+                                <option value="ATENDIDO">✅ ATENDIDO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 14px;">
+                        <label class="input-label" for="editLocation">📍 Ubicación de la Documentación</label>
+                        <select id="editLocation">
+                            <option value="PLANIFICACION">📐 PLANIFICACIÓN</option>
+                            <option value="PRESUPUESTOS">💰 PRESUPUESTOS</option>
+                            <option value="ASESORIA LEGAL">⚖️ ASESORÍA LEGAL</option>
+                            <option value="ALMACENES">📦 ALMACENES</option>
+                            <option value="SECRETARIA">📁 SECRETARÍA</option>
+                            <option value="OTROS">✏️ OTROS (Escribir texto)</option>
                         </select>
                     </div>
-                </div>
-                <div class="input-group" style="margin-top: 12px; margin-bottom: 12px;">
-                    <label class="input-label" for="editLocation">📍 Ubicación de la Documentación</label>
-                    <select id="editLocation">
-                        <option value="PLANIFICACION">📐 PLANIFICACION</option>
-                        <option value="PRESUPUESTOS">💰 PRESUPUESTOS</option>
-                        <option value="ASESORIA LEGAL">⚖️ ASESORIA LEGAL</option>
-                        <option value="ALMACENES">📦 ALMACENES</option>
-                        <option value="SECRETARIA">📁 SECRETARIA</option>
-                        <option value="OTROS">✏️ OTROS (Escribir texto)</option>
-                    </select>
-                </div>
-                <div class="input-group" id="editLocationOtherGroup" style="margin-bottom: 12px; display: none;">
-                    <label class="input-label" for="editLocationOther">Especificar Ubicación Personalizada</label>
-                    <input type="text" id="editLocationOther" placeholder="Ej: Gerencia General, Archivo Central, etc.">
+                    <div class="input-group" id="editLocationOtherGroup" style="margin-bottom: 14px; display: none;">
+                        <label class="input-label" for="editLocationOther">Especificar Ubicación Personalizada</label>
+                        <input type="text" id="editLocationOther" placeholder="Ej: Gerencia General, Archivo Central, etc.">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" id="btnCancelEdit">Cancelar</button>
-                    <button type="submit" id="btnSaveModal" style="padding: 8px 18px; font-size: 0.9rem; background: linear-gradient(135deg, #c2782b 0%, #9a3412 100%); color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Guardar Cambios</button>
+                    <button type="submit" id="btnSaveModal" style="padding: 9px 22px; font-size: 0.92rem; background: linear-gradient(135deg, #c2782b 0%, #9a3412 100%); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.2);">💾 Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -1182,6 +1258,7 @@
                 id: 'hr-1',
                 code: 'HR-2026-0041',
                 institution: 'Ministerio de Economía y Finanzas',
+                sender: 'Lic. Roberto Valdivia (Dir. Financiero)',
                 reference: 'Entrega de informe financiero de rendición de cuentas primer trimestre 2026.',
                 date: new Date().toISOString().split('T')[0],
                 status: 'NO ATENDIDO',
@@ -1195,6 +1272,7 @@
                 id: 'hr-2',
                 code: 'HR-2026-0038',
                 institution: 'Gobierno Autónomo Municipal',
+                sender: 'Ing. Carlos Mendoza (Sec. Obras Públicas)',
                 reference: 'Solicitud de autorización para ejecución de obras de mantenimiento vial en distrito 4.',
                 date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
                 status: 'ATENDIDO',
@@ -1208,6 +1286,7 @@
                 id: 'hr-3',
                 code: 'HR-2026-0035',
                 institution: 'Viceministerio de Planificación',
+                sender: 'Dra. Patricia Morales (Asesora Jurídica)',
                 reference: 'Nota de entrega de carpetas técnicas y planos georreferenciados del proyecto.',
                 date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
                 status: 'NO ATENDIDO',
@@ -1462,6 +1541,7 @@
                 const matchSearch = !q || 
                     (item.code && item.code.toLowerCase().includes(q)) || 
                     (item.institution && item.institution.toLowerCase().includes(q)) || 
+                    (item.sender && item.sender.toLowerCase().includes(q)) || 
                     (item.reference && item.reference.toLowerCase().includes(q)) ||
                     (locInfo.text && locInfo.text.toLowerCase().includes(q));
                 return matchFilter && matchSearch;
@@ -1517,6 +1597,14 @@
                             <span class="note-institution-icon">🏛️</span>
                             <span>${escapeHtml(item.institution)}</span>
                         </div>
+
+                        <!-- Remitente (Sender) -->
+                        ${item.sender && item.sender.trim() ? `
+                            <div class="note-sender" title="Remitente de la nota">
+                                <span class="note-sender-icon">👤</span>
+                                <span><strong>Remitente:</strong> ${escapeHtml(item.sender.trim())}</span>
+                            </div>
+                        ` : ''}
 
                         <!-- Location Badge -->
                         <div class="note-location" title="Ubicación de la documentación">
@@ -1579,6 +1667,7 @@
             document.getElementById('editId').value = item.id;
             document.getElementById('editHrCode').value = item.code || '';
             document.getElementById('editInstitution').value = item.institution || '';
+            document.getElementById('editSenderName').value = item.sender || '';
             document.getElementById('editReference').value = item.reference || '';
             document.getElementById('editDate').value = item.date || '';
             document.getElementById('editStatus').value = item.status || 'NO ATENDIDO';
@@ -1771,6 +1860,7 @@
                     e.preventDefault();
                     const code = document.getElementById('hrCode').value.trim();
                     const institution = document.getElementById('institution').value.trim();
+                    const sender = document.getElementById('senderName') ? document.getElementById('senderName').value.trim() : '';
                     const reference = document.getElementById('reference').value.trim();
                     const date = document.getElementById('deliveryDate').value || new Date().toISOString().split('T')[0];
                     const status = document.getElementById('statusInitial').value;
@@ -1783,6 +1873,7 @@
                         id: 'hr-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
                         code: code,
                         institution: institution,
+                        sender: sender,
                         reference: reference,
                         date: date,
                         status: status,
@@ -1805,6 +1896,7 @@
                     // Reset form inputs
                     document.getElementById('hrCode').value = '';
                     document.getElementById('institution').value = '';
+                    if (document.getElementById('senderName')) document.getElementById('senderName').value = '';
                     document.getElementById('reference').value = '';
                     if (locationSelect) locationSelect.value = 'SECRETARIA';
                     if (locationOtherGroup) locationOtherGroup.style.display = 'none';
@@ -1855,6 +1947,7 @@
                     if (index !== -1) {
                         partes[index].code = document.getElementById('editHrCode').value.trim();
                         partes[index].institution = document.getElementById('editInstitution').value.trim();
+                        partes[index].sender = document.getElementById('editSenderName') ? document.getElementById('editSenderName').value.trim() : '';
                         partes[index].reference = document.getElementById('editReference').value.trim();
                         partes[index].date = document.getElementById('editDate').value;
                         partes[index].status = document.getElementById('editStatus').value;
@@ -1867,7 +1960,7 @@
                         persistAllPartes('Cambios guardados');
                         renderBoard();
                         closeEditModal();
-                        showNotification(`Nota ${partes[index].code} actualizada correctamente con su ubicación.`, 'success');
+                        showNotification(`Nota ${partes[index].code} actualizada correctamente.`, 'success');
                     }
                 });
             }
